@@ -5,10 +5,13 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "lib": "vue-cli-service build --target lib ./src/components/index.js --dest search-form-config --name search-form"
   },
   "dependencies": {
     "core-js": "^3.18.3",
+    "element-ui": "^2.15.6",
+    "search-form-config": "^1.0.3",
     "vue": "^2.6.14",
     "vue-router": "^3.5.2",
     "vuex": "^3.6.2"

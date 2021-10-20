@@ -1,0 +1,17 @@
+{
+  "name": "search-form-config",
+  "version": "1.0.3",
+  "description": "搜索条件自动添加",
+  "private": false,
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Element ui",
+    "Form",
+    "Search"
+  ],
+  "author": "丁永亚",
+  "license": "ISC"
+}
