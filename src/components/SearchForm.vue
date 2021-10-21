@@ -236,7 +236,7 @@ export default {
     }
   }
   .width_100 {
-    width: 100%;
+    width: 100% !important;
   }
   .form_footer {
     display: flex;
