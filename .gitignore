@@ -2,6 +2,7 @@
 node_modules
 /dist
 /search-form-config
+package-lock.json
 
 # local env files
 .env.local

@@ -1,5 +1,5 @@
 <template>
-  <el-card>
+  <el-card shadow="never">
     <el-form ref="form" :model="form" v-bind="$attrs">
       <el-row :gutter="10">
         <el-col
@@ -41,6 +41,7 @@
               :type="item.attrs.type"
               :format="item.attrs.format"
               :value-format="item.attrs.valueFormat"
+              :placeholder="item.attrs.placeholder"
               range-separator="至"
               start-placeholder="开始日期"
               end-placeholder="结束日期"
@@ -49,8 +50,8 @@
         </el-col>
         <el-col class="button_box" :span="6">
           <el-form-item label-width="0" class="button_position">
-            <el-button type="primary" @click="handleSearch">查询</el-button>
-            <el-button @click="handleReset">重置</el-button>
+            <el-button type="primary" icon="el-icon-search" @click="handleSearch">查询</el-button>
+            <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
             <el-button
               v-show="spanLength >= 24 * row"
               type="text"
@@ -70,7 +71,6 @@
       <el-tag
         v-for="(tag, index) in hideFormList"
         :key="index"
-        size="mini"
         closable
         @close="closeTag(tag)"
       >
@@ -80,8 +80,23 @@
         <span v-else-if="tag.type === 'select'">
           {{ tag.label }}: {{ tag.value.map((item) => item.label).toString() }}
         </span>
-        <span v-else-if="tag.type === 'date'">
+        <span
+          v-else-if="
+            tag.type === 'daterange' ||
+            tag.type === 'datetimerange' ||
+            tag.type === 'monthrange'
+          "
+        >
           {{ tag.label }}: {{ tag.value[0] }} 至 {{ tag.value[1] }}
+        </span>
+        <span v-else-if="tag.type === 'dates'">
+          {{ tag.label }}: {{ tag.value.toString() }}
+        </span>
+        <span v-else-if="tag.type === 'week'">
+          {{ tag.label }}: {{ tag.value }}
+        </span>
+        <span v-else-if="tag.type === 'date'">
+          {{ tag.label }}: {{ tag.value }}
         </span>
       </el-tag>
     </section>
@@ -90,7 +105,7 @@
 
 <script>
 export default {
-  name: 'search-form-config',
+  name: 'SearchFormConfig',
   props: {
     formItemList: {
       // 表单基本配置数据
@@ -132,6 +147,7 @@ export default {
       this.$refs.form.validate((valid) => {
         if (valid) {
           console.log(this.form)
+          this.spreadData(this.form)
           this.expandType = false
           this.getHideData()
         }
@@ -152,9 +168,12 @@ export default {
             this.$set(this.form, item, '')
           } else if (this.form[item] instanceof Array) {
             this.$set(this.form, item, [])
+          } else {
+            this.$set(this.form, item, '')
           }
         }
       })
+      this.spreadData(this.form)
     },
     // 获取隐藏数据
     getHideData () {
@@ -164,8 +183,8 @@ export default {
           this.formItemList.forEach((formItem) => {
             if (
               item === formItem.model &&
-                typeof this.form[item] === 'string' &&
-                this.form[item] !== ''
+              typeof this.form[item] === 'string' &&
+              this.form[item] !== ''
             ) {
               this.hideFormList.push({
                 type: formItem.type,
@@ -175,9 +194,8 @@ export default {
               })
             } else if (
               item === formItem.model &&
-                typeof this.form[item] === 'object' &&
-                Array.isArray(this.form[item]) &&
-                this.form[item].length > 0
+              this.form[item] instanceof Array &&
+              this.form[item].length > 0
             ) {
               const valueArr = []
               if (formItem.type === 'select') {
@@ -197,13 +215,35 @@ export default {
                 })
               } else if (formItem.type === 'date') {
                 // 如果是date的话需要判断初始值是否为数组，便于做展示
-                this.hideFormList.push({
-                  type: formItem.type,
-                  key: item,
-                  value: this.form[item],
-                  label: formItem.label
-                })
+                if (formItem.initialValue instanceof Array) {
+                  this.hideFormList.push({
+                    type: formItem.attrs.type, // 这里添加具体的时间控件的类型用于展示判断
+                    key: item,
+                    value: this.form[item],
+                    label: formItem.label
+                  })
+                } else {
+                  this.hideFormList.push({
+                    type: formItem.attrs.type,
+                    key: item,
+                    value: this.form[item],
+                    label: formItem.label
+                  })
+                }
               }
+            } else if (
+              item === formItem.model &&
+              formItem.attrs &&
+              formItem.attrs.type === 'week' &&
+              this.form[item] !== '' &&
+              !(this.form[item] instanceof Array)
+            ) {
+              this.hideFormList.push({
+                type: formItem.attrs.type,
+                key: item,
+                value: this.form[item],
+                label: formItem.label
+              })
             }
           })
         }
@@ -222,29 +262,44 @@ export default {
       })
       this.hideFormList = []
       this.form = formKey
+      this.spreadData(this.form)
+    },
+    // 向父组件传递处理好的数据
+    spreadData (data) {
+      const dataObj = JSON.parse(JSON.stringify(data))
+      this.formItemList.forEach((item) => {
+        Object.keys(dataObj).forEach((key) => {
+          if (item.turnKey && item.model === key) {
+            dataObj[item.attrs.begin] = dataObj[key][0] || ''
+            dataObj[item.attrs.end] = dataObj[key][1] || ''
+            delete dataObj[key]
+          }
+        })
+      })
+      this.$emit('getSearchFormData', dataObj)
     }
   }
 }
 </script>
 
-<style lang="scss">
-  .button_box {
-    float: right;
-    .button_position {
-      display: flex;
-      justify-content: right;
-    }
-  }
-  .width_100 {
-    width: 100% !important;
-  }
-  .form_footer {
+<style scoped lang="scss">
+.button_box {
+  float: right;
+  .button_position {
     display: flex;
-    align-items: center;
-    width: calc(100% - 20px);
-    padding: 10px;
-    overflow: hidden;
-    background: rgba(37, 42, 61, 0.03);
-    border: 1px #c0c4cc dashed;
+    justify-content: right;
   }
+}
+.width_100 {
+  width: 100% !important;
+}
+.form_footer {
+  display: flex;
+  align-items: center;
+  width: calc(100% - 20px);
+  padding: 10px;
+  overflow: hidden;
+  background: rgba(37, 42, 61, 0.03);
+  border: 1px #c0c4cc dashed;
+}
 </style>
