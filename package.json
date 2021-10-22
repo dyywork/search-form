@@ -6,7 +6,7 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "lib": "vue-cli-service build --target lib ./src/components/index.js --dest search-form-config --name search-form"
+    "lib": "vue-cli-service build --target lib ./src/components/index.js --dest search-form-config --name index"
   },
   "dependencies": {
     "core-js": "^3.18.3",
