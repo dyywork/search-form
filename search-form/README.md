@@ -1,11 +1,11 @@
-##SearchFormConfig
+## SearchFormConfig 有问题可以提issue
 
 1.为了解决后台管理系统搜索条件过多，一屏内表格展示内容过少问题封装了这个动态配置搜索表单内容
-###安装
+### 安装
 ```html
 npm i search-form-config
 ```
-###使用
+### 使用
 在vue main.js
 ```js
 import searchFormConfig from 'search-form-config'
@@ -20,4 +20,4 @@ Vue.use(searchFormConfig)
   />
 ```
 
-![form](./form.gif)
+![form](https://raw.githubusercontent.com/dyywork/search-form/main/img/form.gif)
