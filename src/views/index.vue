@@ -4,7 +4,8 @@
       :form-item-list="formItemList"
       :row="2"
       size="mini"
-      label-width="100px"
+      label-width="110px"
+      @getSearchFormData="getSearchFormData"
     ></search-form>
 
   </div>
@@ -61,6 +62,31 @@ export default {
       formItemList: [
         {
           type: 'input',
+          turnLabel: true,
+          model: 'model1',
+          label: '销售单号',
+          placeholder: '1231',
+          initialValue: '',
+          dropdownType: 'test',
+          attrs: {
+            options: [
+              {
+                model: 'model1',
+                label: '销售单号',
+                placeholder: '1231',
+                initialValue: ''
+              },
+              {
+                model: 'model2',
+                label: '来源单据号',
+                placeholder: '1231333',
+                initialValue: ''
+              }
+            ]
+          }
+        },
+        {
+          type: 'input',
           label: '名称',
           model: 'test',
           initialValue: '123'
@@ -70,12 +96,30 @@ export default {
           label: '名称1',
           model: 'test1',
           initialValue: [],
+          turnKey: true,
           attrs: {
             type: 'daterange',
             format: 'yyyy-MM-dd',
-            valueFormat: 'yyyy-MM-dd'
+            valueFormat: 'timestamp',
+            begin: 'beginDate1',
+            end: 'endDate1',
+            startPlaceholder: '开始日期',
+            endPlaceholder: '结束日期',
+            rangeSeparator: '至'
           },
           span: 12
+        },
+        {
+          type: 'date',
+          label: '日期',
+          model: 'datessss',
+          initialValue: '',
+          attrs: {
+            type: 'date',
+            format: 'yyyy-MM-dd',
+            valueFormat: 'timestamp'
+          },
+          span: 6
         },
         {
           type: 'input',
@@ -93,9 +137,11 @@ export default {
           type: 'select',
           label: '名称4',
           model: 'test4',
+          initialValue: [],
+          change: this.selectChange,
           options: [
             {
-              label: '测试1',
+              label: '测试1测试1测试1测试1测试1测试1',
               value: 'q123'
             },
             {
@@ -123,10 +169,10 @@ export default {
           type: 'select',
           label: '名称7',
           model: 'test7',
-          initialValue: [],
+          initialValue: '',
           options: [
             {
-              label: '测试1',
+              label: '测试1测试1测试1测试1测试1测试1',
               value: 'q123'
             },
             {
@@ -144,7 +190,12 @@ export default {
           attrs: {
             type: 'daterange',
             format: 'yyyy-MM-dd',
-            valueFormat: 'yyyy-MM-dd'
+            valueFormat: 'timestamp',
+            begin: 'beginDate',
+            end: 'endDate',
+            startPlaceholder: '开始日期',
+            endPlaceholder: '结束日期',
+            rangeSeparator: '至'
           },
           span: 12
         }
@@ -171,6 +222,17 @@ export default {
     }, 2000)
   },
   methods: {
+    selectChange (value, item) {
+      console.log(value)
+      console.log(item)
+    },
+    dateChange (date, item) {
+      console.log(date)
+      console.log(item)
+    },
+    getSearchFormData (data) {
+      console.log('form', data)
+    },
     submitForm (formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {

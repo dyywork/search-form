@@ -1,19 +1,38 @@
 <template>
   <el-card shadow="never">
-    <el-form ref="form" :model="form" v-bind="$attrs">
-      <el-row :gutter="10">
+    <el-form ref="form" :model="form" v-bind="$attrs" v-on="$listeners">
+      <el-row>
         <el-col
           v-for="(item, index) in formItemList"
           v-show="index <= firstIndex || expandType"
           :key="index"
           :span="item.span || 6"
         >
-          <el-form-item :label="item.label" :prop="item.model">
+          <el-form-item v-if="item.turnLabel">
+            <template v-slot:label>
+              <el-dropdown @command="(event) => handleCommand(event, item)">
+                <span class="dropdown-label">
+                  {{ item.label }}
+                  <i class="el-icon-caret-bottom el-icon--right dropdown-icon" />
+                </span>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item v-for="(dropdown, dropIndex) in item.attrs.options" :key="dropIndex" :command="dropdown.model">{{ dropdown.label }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
+            </template>
+            <el-input
+              class="width_100"
+              v-model="form[item.model]"
+              :placeholder="item.placeholder"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item v-else :label="item.label" :prop="item.model">
             <!-- input -->
             <el-input
               v-if="item.type === 'input'"
               v-model="form[item.model]"
-              :placeholder="item.placeholder || ''"
+              :placeholder="item.placeholder || '请输入'"
               clearable
             />
             <!-- select 是否多选根据initialValue属性是否为数组判断；需要传进来options属性为select选择属性 -->
@@ -24,7 +43,9 @@
               :multiple="Array.isArray(item.initialValue || '')"
               collapse-tags
               clearable
-              placeholder="请选择"
+              filterable
+              :placeholder="item.placeholder || '请选择'"
+              @change="(event) => selectChange(event, item)"
             >
               <el-option
                 v-for="itemSub in item.options"
@@ -36,16 +57,20 @@
             <!-- 日期范围选择器 -->
             <el-date-picker
               v-if="item.type === 'date'"
+              :style="item.type === 'date' && item.attrs.type === 'daterange' ? {width: '264px', marginRight: '10px'}: {}"
               v-model="form[item.model]"
-              class="width_100"
-              :type="item.attrs.type"
-              :format="item.attrs.format"
-              :value-format="item.attrs.valueFormat"
-              :placeholder="item.attrs.placeholder"
-              range-separator="至"
+              :type="item.attrs.type || 'date'"
+              :format="item.attrs.format || 'yyyy-MM-dd'"
+              :value-format="item.attrs.valueFormat || 'timestamp'"
+              :placeholder="item.placeholder || '请选择'"
+              :range-separator="item.attrs.rangeSeparator || '至'"
               start-placeholder="开始日期"
               end-placeholder="结束日期"
+              @change="(event) => dateChange(event, item)"
             ></el-date-picker>
+            <div v-if="item.type === 'date' && item.attrs.type === 'daterange'" style="display: inline-block; position: relative; top:-1px">
+              <el-button v-for="time in dateList" :key="time.value" @click="createDate(time, item)">{{time.name}}</el-button>
+            </div>
           </el-form-item>
         </el-col>
         <el-col class="button_box" :span="6">
@@ -72,6 +97,8 @@
         v-for="(tag, index) in hideFormList"
         :key="index"
         closable
+        size="mini"
+        class="tag_box"
         @close="closeTag(tag)"
       >
         <span v-if="tag.type === 'input'">
@@ -80,23 +107,23 @@
         <span v-else-if="tag.type === 'select'">
           {{ tag.label }}: {{ tag.value.map((item) => item.label).toString() }}
         </span>
-        <span
-          v-else-if="
-            tag.type === 'daterange' ||
-            tag.type === 'datetimerange' ||
-            tag.type === 'monthrange'
-          "
-        >
-          {{ tag.label }}: {{ tag.value[0] }} 至 {{ tag.value[1] }}
+        <span v-else-if="tag.type === 'daterange'">
+          {{ tag.label }}: {{ dayjs(tag.value[0]).format('YYYY-MM-DD') }} 至 {{ dayjs(tag.value[1]).format('YYYY-MM-DD') }}
+        </span>
+        <span v-else-if="tag.type === 'datetimerange'">
+          {{ tag.label }}: {{ dayjs(tag.value[0]).format('YYYY-MM-DD HH:mm:ss') }} 至 {{ dayjs(tag.value[1]).format('YYYY-MM-DD HH:mm:ss') }}
+        </span>
+        <span v-else-if="tag.type === 'monthrange'">
+          {{ tag.label }}: {{ dayjs(tag.value[0]).format('YYYY-MM') }} 至 {{ dayjs(tag.value[1]).format('YYYY-MM') }}
         </span>
         <span v-else-if="tag.type === 'dates'">
-          {{ tag.label }}: {{ tag.value.toString() }}
+          {{ tag.label }}: {{ tag.value.map(item => dayjs(item).format('YYYY-MM-DD')).toString() }}
         </span>
         <span v-else-if="tag.type === 'week'">
           {{ tag.label }}: {{ tag.value }}
         </span>
         <span v-else-if="tag.type === 'date'">
-          {{ tag.label }}: {{ tag.value }}
+          {{ tag.label }}: {{ dayjs(tag.value).format('YYYY-MM-DD') }}
         </span>
       </el-tag>
     </section>
@@ -104,6 +131,8 @@
 </template>
 
 <script>
+import mixins from './mixins/mixins'
+import dayjs from 'dayjs'
 export default {
   name: 'SearchFormConfig',
   props: {
@@ -118,14 +147,34 @@ export default {
       default: 1
     }
   },
+  mixins: [mixins],
   data () {
     return {
+      dayjs: dayjs,
       form: {},
       expandType: false,
       itemList: [],
       firstIndex: 0, // 记录第一行展示的下标
       spanLength: 0,
-      hideFormList: []
+      hideFormList: [],
+      dateList: [
+        {
+          name: '今',
+          type: 'today'
+        },
+        {
+          name: '昨',
+          type: 'yesterday'
+        },
+        {
+          name: '近7天',
+          type: 'week'
+        },
+        {
+          name: '近30天',
+          type: 'month'
+        }
+      ]
     }
   },
   mounted () {
@@ -146,12 +195,56 @@ export default {
     handleSearch () {
       this.$refs.form.validate((valid) => {
         if (valid) {
-          console.log(this.form)
           this.spreadData(this.form)
           this.expandType = false
           this.getHideData()
         }
       })
+    },
+    // 时间快捷选择
+    createDate (time, item) {
+      console.log(item)
+      console.log(time)
+      const date = new Date()
+      if (time.type === 'today') {
+        this.form[item.model] = [date.getTime(), date.getTime()]
+      } else if (time.type === 'yesterday') {
+        this.form[item.model] = [date.getTime() - 3600 * 1000 * 24, date.getTime() - 3600 * 1000 * 24]
+      } else if (time.type === 'week') {
+        this.form[item.model] = [date.getTime() - 7 * 3600 * 1000 * 24, date.getTime()]
+      } else if (time.type === 'month') {
+        this.form[item.model] = [date.getTime() - 30 * 3600 * 1000 * 24, date.getTime()]
+      }
+    },
+    // select 选择后触发
+    selectChange (value, item) {
+      if (item.change) {
+        item.change(value, item)
+      }
+    },
+    // 日期范围选择器change方法触发
+    dateChange (date, item) {
+      if (item.change) {
+        item.change(date, item)
+      }
+    },
+    // 切换label
+    handleCommand (data, row) {
+      this.formItemList.forEach((item, index) => {
+        if (item.dropdownType === row.dropdownType) {
+          row.attrs.options.forEach(itemRow => {
+            if (itemRow.model === data) {
+              this.$set(this.formItemList, index, {
+                ...row,
+                ...itemRow
+              })
+            } else {
+              this.form[itemRow.model] = ''
+            }
+          })
+        }
+      })
+      this.getHideData()
     },
     // 清除单条隐藏数据
     closeTag (tag) {
@@ -175,80 +268,6 @@ export default {
       })
       this.spreadData(this.form)
     },
-    // 获取隐藏数据
-    getHideData () {
-      this.hideFormList = []
-      Object.keys(this.form).forEach((item, index) => {
-        if (index > this.firstIndex) {
-          this.formItemList.forEach((formItem) => {
-            if (
-              item === formItem.model &&
-              typeof this.form[item] === 'string' &&
-              this.form[item] !== ''
-            ) {
-              this.hideFormList.push({
-                type: formItem.type,
-                key: item,
-                value: this.form[item],
-                label: formItem.label
-              })
-            } else if (
-              item === formItem.model &&
-              this.form[item] instanceof Array &&
-              this.form[item].length > 0
-            ) {
-              const valueArr = []
-              if (formItem.type === 'select') {
-                // 如果是select的话需要把label加进来，便于做展示
-                formItem.options.forEach((option) => {
-                  this.form[item].forEach((valueItem) => {
-                    if (option.value === valueItem) {
-                      valueArr.push({ label: option.label, value: valueItem })
-                    }
-                  })
-                })
-                this.hideFormList.push({
-                  type: formItem.type,
-                  key: item,
-                  value: valueArr,
-                  label: formItem.label
-                })
-              } else if (formItem.type === 'date') {
-                // 如果是date的话需要判断初始值是否为数组，便于做展示
-                if (formItem.initialValue instanceof Array) {
-                  this.hideFormList.push({
-                    type: formItem.attrs.type, // 这里添加具体的时间控件的类型用于展示判断
-                    key: item,
-                    value: this.form[item],
-                    label: formItem.label
-                  })
-                } else {
-                  this.hideFormList.push({
-                    type: formItem.attrs.type,
-                    key: item,
-                    value: this.form[item],
-                    label: formItem.label
-                  })
-                }
-              }
-            } else if (
-              item === formItem.model &&
-              formItem.attrs &&
-              formItem.attrs.type === 'week' &&
-              this.form[item] !== '' &&
-              !(this.form[item] instanceof Array)
-            ) {
-              this.hideFormList.push({
-                type: formItem.attrs.type,
-                key: item,
-                value: this.form[item],
-                label: formItem.label
-              })
-            }
-          })
-        }
-      })
-    },
     // 更多筛选点击事件,根据记录的下标去截取和拼接itemList
     openForm () {
       this.expandType = !this.expandType
@@ -270,9 +289,25 @@ export default {
       this.formItemList.forEach((item) => {
         Object.keys(dataObj).forEach((key) => {
           if (item.turnKey && item.model === key) {
-            dataObj[item.attrs.begin] = dataObj[key][0] || ''
-            dataObj[item.attrs.end] = dataObj[key][1] || ''
+            if (item.type === 'date' && item.attrs.valueFormat === 'timestamp') {
+              dataObj[item.attrs.begin] = dataObj[key][0] || ''
+              dataObj[item.attrs.end] = dataObj[key][1] ? dataObj[key][1] + 86399000 : ''
+            } else if (item.type === 'date' && item.attrs.valueFormat === 'yyyy-MM-dd') {
+              dataObj[item.attrs.begin] = dataObj[key][0] || ''
+              dataObj[item.attrs.end] = dataObj[key][1] ? dataObj[key][1] + '23:59:59' : ''
+            } else if (item.type === 'date' && item.attrs.valueFormat === 'yyyy-MM-dd HH:mm:ss') {
+              dataObj[item.attrs.begin] = dataObj[key][0] || ''
+              dataObj[item.attrs.end] = dataObj[key][1] || ''
+            }
             delete dataObj[key]
+          } else if (item.turnKey && item.model === key && dataObj[key].length === 0) {
+            delete dataObj[key]
+          } else if (item.turnLabel && item.model === key) {
+            item.attrs.options.forEach(drop => {
+              if (drop.model !== item.model) {
+                dataObj[drop.model] = ''
+              }
+            })
           }
         })
       })
@@ -283,12 +318,31 @@ export default {
 </script>
 
 <style scoped lang="scss">
+::v-deep{
+  .el-select__tags{
+    span:nth-child(1) {
+      span:nth-child(1) {
+        span{
+          max-width: 100px;
+        }
+      }
+    }
+  }
+}
 .button_box {
   float: right;
   .button_position {
     display: flex;
     justify-content: right;
   }
+}
+.tag_box{
+  margin-left: 5px;
+  display: inline-block;
+  float: left;
+}
+.float_left{
+  float: left;
 }
 .width_100 {
   width: 100% !important;
@@ -297,8 +351,9 @@ export default {
   display: flex;
   align-items: center;
   width: calc(100% - 20px);
-  padding: 10px;
+  padding: 5px 10px;
   overflow: hidden;
+  border-radius: 5px;
   background: rgba(37, 42, 61, 0.03);
   border: 1px #c0c4cc dashed;
 }
