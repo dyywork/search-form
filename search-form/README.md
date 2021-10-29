@@ -17,6 +17,7 @@ Vue.use(searchFormConfig)
     :row="2" // 显示几行
     size="mini"
     label-width="100px"
+    @getSearchFormData="getSearchFormData" // 表单数据回调
   />
 ```
 
