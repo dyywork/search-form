@@ -10,8 +10,8 @@ npm i search-form-config
 ```js
 import searchFormConfig from 'search-form-config'
 Vue.use(searchFormConfig)
-
-
+```
+```html
 <search-form-config
     :form-item-list="formItemList" // 表单属性配置
     :row="2" // 显示几行
@@ -20,198 +20,130 @@ Vue.use(searchFormConfig)
   />
 ```
 ![form](./img/form.gif)
-```json
-{
-  formItemList: [
-    {
-      type: 'input',
-      label: '名称',
-      model: 'test',
-      initialValue: '123',
-    },
-    {
-      type: 'date',
-      label: '名称1',
-      model: 'test1',
-      initialValue: [],
-      attrs: {
-        type: 'daterange',
-        format: 'yyyy-MM-dd',
-        valueFormat: 'yyyy-MM-dd',
-      },
-      span: 12,
-    },
-    {
-      type: 'date',
-      label: '名称2',
-      model: 'test2',
-      initialValue: '',
-      attrs: {
-        type: 'year',
-        format: 'yyyy',
-        placeholder: '年份',
-      },
-      span: 6,
-    },
-    {
-      type: 'date',
-      label: '名称3',
-      model: 'test3',
-      initialValue: '',
-      attrs: {
-        type: 'year',
-        format: 'yyyy',
-        valueFormat: 'yyyy',
-      },
-      span: 6,
-    },
-    {
-      type: 'select',
-      label: '名称4',
-      model: 'test4',
-      initialValue: [],
+```js
+[
+  {
+    type: 'input',
+    turnLabel: true, // form的label 可以切换的
+    model: 'model1',
+    label: '销售单号',
+    placeholder: '1231',
+    initialValue: '',
+    dropdownType: 'test',
+    attrs: {
       options: [
         {
-          label: '测试1',
-          value: 'q123',
+          model: 'model1',
+          label: '销售单号',
+          placeholder: '1231',
+          initialValue: ''
         },
         {
-          label: '测试2',
-          value: 'q',
-        },
-      ],
-      span: 6,
+          model: 'model2',
+          label: '来源单据号',
+          placeholder: '1231333',
+          initialValue: ''
+        }
+      ]
+    }
+  },
+  {
+    type: 'input', // 正常的input
+    label: '名称', // label名称
+    model: 'test', // 对应的字段名称
+    initialValue: '123' // 初始值
+  },
+  {
+    type: 'date', // 日期格式
+    label: '名称1',
+    model: 'test1',
+    initialValue: [], // 为范围时，初始值要为[] 知识单个的时，初始值需为 ''
+    turnKey: true, // 为范围时需要转换开始和结束时间的字段吗
+    change: this.dateChange, // 选中时回调
+    attrs: {
+      type: 'daterange', // 具体日期选择器格式
+      format: 'yyyy-MM-dd', // 展示格式
+      valueFormat: 'timestamp', // 数据格式
+      begin: 'beginDate1', // 转换的开始时间字段
+      end: 'endDate1', // 转换的结束时间字段
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      rangeSeparator: '至'
     },
-    {
-      type: 'select',
-      label: '名称5',
-      model: 'test5',
-      initialValue: [],
-      options: [],
-      span: 6,
-    },
-    {
-      type: 'input',
-      label: '名称6',
-      model: 'test6',
-      span: 6,
-    },
-    {
-      type: 'select',
-      label: '名称7',
-      model: 'test7',
-      initialValue: [],
-      options: [
-        {
-          label: '测试1',
-          value: 'q123',
-        },
-        {
-          label: '测试2',
-          value: 'q',
-        },
-      ],
-      span: 6,
-    },
-    {
+    span: 12
+  },
+  {
+    type: 'date',
+    label: '日期',
+    model: 'datessss',
+    initialValue: '',
+    attrs: {
       type: 'date',
-      label: '名称8',
-      model: 'test8',
-      initialValue: [],
-      attrs: {
-        type: 'daterange',
-        format: 'yyyy-MM-dd',
-        valueFormat: 'yyyy-MM-dd',
-      },
-      span: 12,
+      format: 'yyyy-MM-dd',
+      valueFormat: 'timestamp'
     },
-    {
-      type: 'date',
-      label: '名称9',
-      model: 'test9',
-      initialValue: '',
-      attrs: {
-        type: 'date',
-        format: 'yyyy-MM-dd',
-        valueFormat: 'yyyy-MM-dd',
+    span: 6
+  },
+  {
+    type: 'select', // 选择框
+    label: '名称4',
+    model: 'test4',
+    initialValue: [], // 初始值为[] 是多选，初始值为'' 是单选
+    change: this.selectChange, // 选中时回调
+    options: [
+      {
+        label: '测试1测试1测试1测试1测试1测试1',
+        value: 'q123'
       },
-      span: 6,
-    },
-    {
-      type: 'date',
-      label: '月份',
-      model: 'test10',
-      initialValue: '',
-      attrs: {
-        type: 'month',
-        format: 'MM',
-        valueFormat: 'MM',
+      {
+        label: '测试2',
+        value: 'q'
+      }
+    ],
+    span: 6
+  },
+  {
+    type: 'select',
+    label: '名称5',
+    model: 'test5',
+    initialValue: [],
+    options: [],
+    span: 6
+  },
+  {
+    type: 'select',
+    label: '名称7',
+    model: 'test7',
+    initialValue: '',
+    options: [
+      {
+        label: '测试1测试1测试1测试1测试1测试1',
+        value: 'q123'
       },
-      span: 6,
+      {
+        label: '测试2',
+        value: 'q'
+      }
+    ],
+    span: 6
+  },
+  {
+    type: 'date',
+    label: '名称8',
+    model: 'test8',
+    initialValue: [],
+    attrs: {
+      type: 'daterange',
+      format: 'yyyy-MM-dd',
+      valueFormat: 'timestamp',
+      begin: 'beginDate',
+      end: 'endDate',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      rangeSeparator: '至'
     },
-    {
-      type: 'date',
-      label: '多天选择',
-      model: 'test11',
-      initialValue: [],
-      attrs: {
-        type: 'dates',
-        format: 'yyyy-MM-dd',
-        valueFormat: 'yyyy-MM-dd',
-      },
-      span: 6,
-    },
-    {
-      type: 'date', // 时间控件
-      label: '周',
-      model: 'test12',
-      initialValue: '',
-      attrs: {
-        type: 'week', // 具体的时间控件类型
-        format: 'yyyy 第 WW 周',
-      },
-      span: 6,
-    },
-    {
-      type: 'date',
-      label: '时间',
-      model: 'test13',
-      initialValue: '',
-      attrs: {
-        type: 'datetime',
-        format: 'yyyy-MM-dd hh:mm:ss',
-        valueFormat: 'yyyy-MM-dd hh:mm:ss',
-      },
-      span: 6,
-    },
-    {
-      type: 'date',
-      label: '时间范围',
-      model: 'test14',
-      initialValue: [],
-      attrs: {
-        type: 'datetimerange',
-        format: 'yyyy-MM-dd hh:mm:ss',
-        valueFormat: 'yyyy-MM-dd hh:mm:ss',
-      },
-      span: 12,
-    },
-    {
-      type: 'date',
-      label: '时间范围',
-      model: 'test15',
-      initialValue: [],
-      turnKey: true, // 是否需要转换字段
-      attrs: {
-        type: 'monthrange',
-        format: 'yyyy-MM',
-        valueFormat: 'yyyy-MM',
-        begin: 'beginDate', // 开始时间
-        end: 'endDate',  // 结束时间
-      },
-      span: 12,
-    },
-  ],
-}
+    span: 12
+  }
+]
 ```
 
