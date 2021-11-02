@@ -107,12 +107,16 @@ Vue.use(searchFormConfig)
           span: 6
         },
         {
-          type: 'select',
-          label: '名称5',
-          model: 'test5',
-          initialValue: [],
-          options: [],
-          span: 6
+            type: 'range', // 范围选择
+            label: '名称6',
+            model: 'minModel', // 最小值
+            maxModel: 'maxModel', // 最大值
+            initialValue: '', // 最小值的初始值
+            maxInitialValue: '', // 最大值的初始值
+            separator: '至',
+            placeholder: '请输入',
+            maxPlaceholder: '请输入',
+            span: 6
         },
         {
           type: 'select',

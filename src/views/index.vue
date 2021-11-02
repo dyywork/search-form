@@ -160,9 +160,15 @@ export default {
           span: 6
         },
         {
-          type: 'input',
+          type: 'range',
           label: '名称6',
-          model: 'test6',
+          model: 'minModel',
+          maxModel: 'maxModel',
+          initialValue: '',
+          maxInitialValue: '',
+          separator: '至',
+          placeholder: '请输入',
+          maxPlaceholder: '请输入',
           span: 6
         },
         {

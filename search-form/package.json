@@ -1,6 +1,6 @@
 {
   "name": "search-form-config",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "搜索条件自动添加",
   "repository": "https://github.com/dyywork/search-form.git",
   "private": false,

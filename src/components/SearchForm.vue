@@ -21,7 +21,6 @@
               </el-dropdown>
             </template>
             <el-input
-              class="width_100"
               v-model="form[item.model]"
               :placeholder="item.placeholder"
               clearable
@@ -39,7 +38,6 @@
             <el-select
               v-if="item.type === 'select'"
               v-model="form[item.model]"
-              class="width_100"
               :multiple="Array.isArray(item.initialValue || '')"
               collapse-tags
               clearable
@@ -71,6 +69,11 @@
             <div v-if="item.type === 'date' && item.attrs.type === 'daterange'" style="display: inline-block; position: relative; top:-1px">
               <el-button v-for="time in dateList" :key="time.value" @click="createDate(time, item)">{{time.name}}</el-button>
             </div>
+            <div v-if="item.type === 'range'">
+              <el-input-number v-model="form[item.model]" :placeholder="item.placeholder" :controls="false" @blur="rangeBlur('min', item)"/>
+              <span style="padding: 0 5px">{{item.separator}}</span>
+              <el-input-number v-model="form[item.maxModel]" :placeholder="item.maxPlaceholder" :controls="false" @blur="rangeBlur('max', item)"/>
+            </div>
           </el-form-item>
         </el-col>
         <el-col class="button_box" :span="6">
@@ -92,40 +95,48 @@
       </el-row>
     </el-form>
     <section v-if="!expandType && hideFormList.length > 0" class="form_footer">
-      <span>已选条件：</span>
-      <el-tag
-        v-for="(tag, index) in hideFormList"
-        :key="index"
-        closable
-        size="mini"
-        class="tag_box"
-        @close="closeTag(tag)"
-      >
+      <div class="tag_title">已选条件：</div>
+      <div class="tag_content">
+        <el-tag
+          v-for="(tag, index) in hideFormList"
+          :key="index"
+          closable
+          size="mini"
+          class="tag_box"
+          @close="closeTag(tag)"
+        >
         <span v-if="tag.type === 'input'">
           {{ tag.label }}: {{ tag.value }}
         </span>
-        <span v-else-if="tag.type === 'select'">
+          <span v-else-if="tag.type === 'select'">
           {{ tag.label }}: {{ tag.value.map((item) => item.label).toString() }}
         </span>
-        <span v-else-if="tag.type === 'daterange'">
+          <span v-else-if="tag.type === 'daterange'">
           {{ tag.label }}: {{ dayjs(tag.value[0]).format('YYYY-MM-DD') }} 至 {{ dayjs(tag.value[1]).format('YYYY-MM-DD') }}
         </span>
-        <span v-else-if="tag.type === 'datetimerange'">
+          <span v-else-if="tag.type === 'datetimerange'">
           {{ tag.label }}: {{ dayjs(tag.value[0]).format('YYYY-MM-DD HH:mm:ss') }} 至 {{ dayjs(tag.value[1]).format('YYYY-MM-DD HH:mm:ss') }}
         </span>
-        <span v-else-if="tag.type === 'monthrange'">
+          <span v-else-if="tag.type === 'monthrange'">
           {{ tag.label }}: {{ dayjs(tag.value[0]).format('YYYY-MM') }} 至 {{ dayjs(tag.value[1]).format('YYYY-MM') }}
         </span>
-        <span v-else-if="tag.type === 'dates'">
+          <span v-else-if="tag.type === 'dates'">
           {{ tag.label }}: {{ tag.value.map(item => dayjs(item).format('YYYY-MM-DD')).toString() }}
         </span>
-        <span v-else-if="tag.type === 'week'">
+          <span v-else-if="tag.type === 'week'">
           {{ tag.label }}: {{ tag.value }}
         </span>
-        <span v-else-if="tag.type === 'date'">
+          <span v-else-if="tag.type === 'date'">
           {{ tag.label }}: {{ dayjs(tag.value).format('YYYY-MM-DD') }}
         </span>
-      </el-tag>
+          <span v-else-if="tag.type === 'range'">
+          {{ tag.label }}: {{ tag.value }}
+        </span>
+        </el-tag>
+      </div>
+      <div class="tag_close">
+        <el-button type="text" @click="handleReset">清除</el-button>
+      </div>
     </section>
   </el-card>
 </template>
@@ -184,7 +195,12 @@ export default {
     const formKey = {}
     this.formItemList.forEach((item, index) => {
       this.spanLength += item.span || 6
-      formKey[item.model] = item.initialValue || ''
+      if (item.type === 'range') {
+        formKey[item.model] = item.initialValue || undefined
+        formKey[item.maxModel] = item.maxInitialValue || undefined
+      } else {
+        formKey[item.model] = item.initialValue || ''
+      }
       if (this.spanLength < 24 * this.row) {
         this.firstIndex = index
       }
@@ -203,8 +219,6 @@ export default {
     },
     // 时间快捷选择
     createDate (time, item) {
-      console.log(item)
-      console.log(time)
       const date = new Date()
       if (time.type === 'today') {
         this.form[item.model] = [date.getTime(), date.getTime()]
@@ -277,11 +291,27 @@ export default {
     handleReset () {
       const formKey = {}
       this.formItemList.forEach((item) => {
-        formKey[item.model] = item.initialValue || ''
+        if (item.type === 'range') {
+          formKey[item.model] = item.initialValue || undefined
+          formKey[item.maxModel] = item.maxInitialValue || undefined
+        } else {
+          formKey[item.model] = item.initialValue || ''
+        }
       })
       this.hideFormList = []
       this.form = formKey
       this.spreadData(this.form)
+    },
+    rangeBlur (type, item) {
+      if (type === 'min') {
+        if (this.form[item.maxModel] && this.form[item.model] > this.form[item.maxModel]) {
+          this.$message.warning(`${item.label} 最小值不能大于最大值`)
+        }
+      } else {
+        if (this.form[item.model] && this.form[item.model] > this.form[item.maxModel]) {
+          this.$message.warning(`${item.label} 最大值不能小于最小值`)
+        }
+      }
     },
     // 向父组件传递处理好的数据
     spreadData (data) {
@@ -323,10 +353,13 @@ export default {
     span:nth-child(1) {
       span:nth-child(1) {
         span{
-          max-width: 100px;
+          max-width: 75px;
         }
       }
     }
+  }
+  .el-input-number{
+    width: 80px !important;
   }
 }
 .button_box {
@@ -349,6 +382,7 @@ export default {
 }
 .form_footer {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   width: calc(100% - 20px);
   padding: 5px 10px;
@@ -356,5 +390,16 @@ export default {
   border-radius: 5px;
   background: rgba(37, 42, 61, 0.03);
   border: 1px #c0c4cc dashed;
+  .tag_title {
+    width: 61px;
+    font-size: 12px;
+  }
+  .tag_content {
+    flex: 1;
+  }
+  .tag_close{
+    width: 30px;
+    font-size: 12px;
+  }
 }
 </style>
